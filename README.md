@@ -46,7 +46,9 @@ Installs [Shairport Sync](https://github.com/mikebrady/shairport-sync) AirPlay 2
 
 Installs [Raspotify](https://github.com/dtcooper/raspotify), an open source Spotify client for Raspberry Pi.
 
-## Additional steps
+## [!TIP] Additional steps
+
+An example config.txt has been included, based on a DigiAmp+
 
 ### Enable HiFiBerry device
 
@@ -58,8 +60,8 @@ dtoverlay=hifiberry-dacplus
 ```
 
 To enable the software volume mixer, `/etc/asound.conf` needs to be created:
-
-```
+<soundConf>
+```ini
 defaults.pcm.card 0
 defaults.ctl.card 0
 
@@ -104,18 +106,7 @@ pcm.!default {
   slave.pcm "softvol"
 }
 ```
-
-### Read-only mode
-
-To avoid SD card corruption when powering off, you can boot Raspberry Pi OS in read-only mode. This can be achieved using the `raspi-config` script (in the "Performance" section).
-
-### Disable Wi-Fi power management
-
-Disabling Wi-Fi power management might resolve some connection issues:
-
-```sh
-sudo nmcli connection modify preconfigured wifi.powersave 2
-```
+</soundConf>
 
 ### Enabling Audio DAC Amp Hats:
 
@@ -148,6 +139,17 @@ dtoverlay=dwc2,dr_mode=host
 dtoverlay=rpi-digiampplus,auto_mute_amp
 ```
 
+### Read-only mode
+
+To avoid SD card corruption when powering off, you can boot Raspberry Pi OS in read-only mode. This can be achieved using the `raspi-config` script (in the "Performance" section).
+
+### Disable Wi-Fi power management
+
+Disabling Wi-Fi power management might resolve some connection issues:
+
+```sh
+sudo nmcli connection modify preconfigured wifi.powersave 2
+```
 ### Add Bluetooth devices
 
 The device should be visible for new Bluetooth connections, but in some cases you might need to pair them manually:
