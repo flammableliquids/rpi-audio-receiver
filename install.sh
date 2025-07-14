@@ -27,6 +27,16 @@ log_red() {
   printf "${RED} ${text}${NORMAL}\r\n"
 }
 
+askQuestion() {
+  local prompt="$1"
+  local YELLOW="\033[0;33m"
+  local NORMAL="\033[0m"
+  local response
+  read -p "$(echo -e "${YELLOW}${prompt}${NORMAL}")" response
+  echo "$response"
+}
+
+
 banner(){
   # Get the terminal width
   width=$(tput cols)
@@ -34,18 +44,18 @@ banner(){
   printf '=%.0s' $(seq 1 $width)
 }
 
-apt_update_netselect(){
+# apt_update_netselect(){
 
-    # netselect on rpi doesn't seem to actually change /etc/apt/sources.list
-    # commenting out until i figure out why
-    banner
-    read -p "Do you want to change apt (netselect-apt)? [y/N] " REPLY
-    if [[ ! "$REPLY" =~ ^(yes|y|Y)$ ]]; then return; fi
-    sudo apt-get update
-    log_green "installing netselect-apt and executing"
-    sudo apt-get install netselect-apt -y
-    sudo netselect-apt
-}
+#     # netselect on rpi doesn't seem to actually change /etc/apt/sources.list
+#     # commenting out until i figure out why
+#     banner
+#     read -p "Do you want to change apt (netselect-apt)? [y/N] " REPLY
+#     if [[ ! "$REPLY" =~ ^(yes|y|Y)$ ]]; then return; fi
+#     sudo apt-get update
+#     log_green "installing netselect-apt and executing"
+#     sudo apt-get install netselect-apt -y
+#     sudo netselect-apt
+# }
 
 update_latest(){
     sudo apt-get update 
@@ -90,7 +100,8 @@ set_hostname() {
 
 install_snapcast(){
     if [[ -z $snapclientInstall ]]; then 
-      read -p "Do you want to install UPnP renderer? [y/N] " REPLY
+      REPLY=$(askQuestion "Do you want to install a snapcast client? [y/N] " )
+      # read -p "Do you want to install a snapcast client? [y/N] " REPLY
       #https://github.com/Torgee/rpi-audio-receiver/blob/master/install-snapcast.sh
       if [[ ! "$REPLY" =~ ^(yes|y|Y)$ ]]; then return; fi
     fi
@@ -104,7 +115,8 @@ install_snapcast(){
 
 install_UPnP_renderer(){
     if [[ -z $UPnPRendererInstall ]]; then 
-      read -p "Do you want to install UPnP renderer? [y/N] " REPLY
+      REPLY=$(askQuestion "Do you want to install UPnP renderer? [y/N] " )
+      # read -p "Do you want to install UPnP renderer? [y/N] " REPLY
       #https://github.com/Torgee/rpi-audio-receiver/blob/master/install-upnp.sh
       if [[ ! "$REPLY" =~ ^(yes|y|Y)$ ]]; then return; fi
     fi
@@ -131,7 +143,8 @@ EOF
 
 install_bluetooth() {
     if [[ -z $bluetoothInstall ]]; then 
-      read -p "Do you want to install Bluetooth Audio (ALSA)? [y/N] " REPLY
+      REPLY=$(askQuestion "Do you want to install Bluetooth Audio (ALSA)? [y/N] " )
+      # read -p "Do you want to install Bluetooth Audio (ALSA)? [y/N] " REPLY
       if [[ ! "$REPLY" =~ ^(yes|y|Y)$ ]]; then return; fi
     fi
     if ! $bluetoothInstall ; then return; fi
@@ -223,7 +236,8 @@ sudo systemctl daemon-reload
 
 install_shairport() {
     if [[ -z $shairportInstall ]]; then 
-      read -p "Do you want to install Shairport Sync (AirPlay 2 audio player)? [y/N] " REPLY
+      REPLY=$(askQuestion "Do you want to install Shairport Sync (AirPlay 2 audio player)? [y/N] " )
+      #read -p "Do you want to install Shairport Sync (AirPlay 2 audio player)? [y/N] " REPLY
       if [[ ! "$REPLY" =~ ^(yes|y|Y)$ ]]; then return; fi
     fi
     if ! $shairportInstall; then return; fi
@@ -233,7 +247,7 @@ install_shairport() {
 
     sudo apt update
     sudo apt install -y --no-install-recommends wget unzip autoconf automake build-essential libtool git autoconf automake libpopt-dev libconfig-dev libasound2-dev avahi-daemon libavahi-client-dev libssl-dev libsoxr-dev libplist-dev libsodium-dev libavutil-dev libavcodec-dev libavformat-dev uuid-dev libgcrypt20-dev xxd
-
+    
     if [[ -z "$TMP_DIR" ]]; then
         TMP_DIR=$(mktemp -d)
     fi
@@ -293,7 +307,8 @@ EOF
 
 install_raspotify() {
     if [[ -z $raspotifyInstall ]]; then 
-      read -p "Do you want to install Raspotify (Spotify Connect)? [y/N] " REPLY
+      REPLY=$(askQuestion "Do you want to install Raspotify (Spotify Connect)? [y/N] " )
+      #read -p "Do you want to install Raspotify (Spotify Connect)? [y/N] " REPLY
       if [[ ! "$REPLY" =~ ^(yes|y|Y)$ ]]; then return; fi
     fi
     if ! $raspotifyInstall; then return; fi
@@ -375,4 +390,6 @@ install_shairport $shairportInstall
 install_raspotify $raspotifyInstall
 install_UPnP_renderer $UPnPRendererInstall
 install_snapcast $snapclientInstall
-
+banner
+log_green "Installation script completed!"
+banner
