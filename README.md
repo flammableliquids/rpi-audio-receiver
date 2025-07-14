@@ -20,6 +20,8 @@ The installation script asks whether to install each component.
 
     wget https://raw.githubusercontent.com/nicokaiser/rpi-audio-receiver/main/install.sh
     bash install.sh
+    wget https://raw.githubusercontent.com/flammableliquids/rpi-audio-receiver/main/install.sh
+    bash install.sh
 
 **Note**: the installation process is not reversible, there is no uninstall. The script is meant to be run on a clean device that is not used for anything else.
 
