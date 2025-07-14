@@ -20,6 +20,9 @@ The installation script asks whether to install each component.
 
     wget https://raw.githubusercontent.com/nicokaiser/rpi-audio-receiver/main/install.sh
     bash install.sh
+
+or
+    
     wget https://raw.githubusercontent.com/flammableliquids/rpi-audio-receiver/main/install.sh
     bash install.sh
 
@@ -46,21 +49,23 @@ Installs [Shairport Sync](https://github.com/mikebrady/shairport-sync) AirPlay 2
 
 Installs [Raspotify](https://github.com/dtcooper/raspotify), an open source Spotify client for Raspberry Pi.
 
-## [!TIP] Additional steps
+## Optional Manual Steps
 
-An example config.txt has been included, based on a DigiAmp+
+> [!TIP]
+> An example config.txt has been included
+> based on a DigiAmp+ and a Raspberry Pi Model 3.
 
 ### Enable HiFiBerry device
 
 When using a HiFiBerry or similar I2C device, a device tree overlay needs to be enabled in `/boot/firmware/config.txt` (replace `dacplus` with the overlay that fits your hardware):
 
-```
+```ini
 ...
 dtoverlay=hifiberry-dacplus
 ```
 
 To enable the software volume mixer, `/etc/asound.conf` needs to be created:
-<soundConf>
+
 ```ini
 defaults.pcm.card 0
 defaults.ctl.card 0
@@ -106,7 +111,6 @@ pcm.!default {
   slave.pcm "softvol"
 }
 ```
-</soundConf>
 
 ### Enabling Audio DAC Amp Hats:
 
@@ -125,15 +129,17 @@ pcm.!default {
 
 When an external audio device (HDMI, USB, I2S) is used, the internal audio can be disabled in `/boot/firmware/config.txt` (replace `hifiberry-dacplus` with the overlay which fits your installation):
 
-```
+```ini
 dtoverlay=disable-bt
 dtparam=audio=off
 dtoverlay=pi3-disable-bt
 ```
+
 ```
 dtoverlay=vc4-kms-v3d,noaudio
 dtoverlay=dwc2,dr_mode=host
 ```
+
 #### Enable Raspberry Pi DigiAmp Plus
 ```
 dtoverlay=rpi-digiampplus,auto_mute_amp
@@ -169,7 +175,7 @@ If you really want to use the internal Bluetooth module, you almost certainly ne
 
 Modify `/usr/local/bin/bluetooth-udev` and remove the comments (`#`) around the `ifconfig` calls:
 
-```
+```ini
 ...
 if [ "$action" = "add" ]; then
     ...
@@ -187,7 +193,7 @@ fi
 ### Bluetooth A2DP volume
 
 To enable A2DP volume control, add the `--plugin=a2dp` parameter to the `bluetoothd` command line. This helps setting the volume via Bluetooth, but does not work on all setups.
-```
+```sh
 sudo apt-get install alsa-utils bluez bluez-tools pulseaudio-module-bluetooth
 ```
 
@@ -200,14 +206,15 @@ ExecStart=
 ExecStart=/usr/libexec/bluetooth/bluetoothd --plugin=a2dp
 EOF
 ```
-** WARNING: This can mess up your bluetooth configuration**
 ### Bluetooth Fast Connectable
+> [!WARNING]
+>  Bluetooth Fast connection can mess up your bluetooth configuration
 
 Using the `FastConnectable` flag may lead to faster Bluetooth connections, but may also lead to poor sound quality. You can try and see if it works for you. See [#70](https://github.com/nicokaiser/rpi-audio-receiver/issues/70)
 
 Add the flag to the `General` section in `/etc/bluetooth/main.conf`:
 
-```
+```ini
 [General]
 ...
 FastConnectable = true
@@ -232,6 +239,9 @@ To enable pairing with a PIN code instead of Simple Secure Pairing mode, the fol
 
 So you need to try yourself if this works with your setup.
 
+> [!WARNING]
+>  
+
 ## Limitations
 
 - Only one Bluetooth device can be connected at a time, otherwise interruptions may occur.
@@ -249,12 +259,12 @@ These scripts are tested and work on a current Raspberry Pi OS setup on Raspberr
 ### Bluetooth:
 
 It can fail to power on after first boot:
-```
+```sh
 bluetoothctl
 power on
 ```
 The bluetooth.service can 'Fail to set mode: Failed'
-```
+```sh
 sudo rfkill unblock bluetooth
 sudo systemctl stop bluetooth
 sudo systemctl status bluetooth
