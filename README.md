@@ -138,6 +138,7 @@ dtoverlay=pi3-disable-bt
 ```
 dtoverlay=vc4-kms-v3d,noaudio
 dtoverlay=dwc2,dr_mode=host
+
 ```
 
 #### Enable Raspberry Pi DigiAmp Plus

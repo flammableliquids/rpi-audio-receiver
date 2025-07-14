@@ -58,9 +58,6 @@ function log_blue() {
 }
 function log_red() {
   local text="$1"
-  echo $text
-  printf "${RED} ${text}${NORMAL}\r\n"
-}
 
 function banner(){
   # Get the terminal width
@@ -246,6 +243,7 @@ EOF
 SUBSYSTEM=="input", GROUP="input", MODE="0660"
 KERNEL=="input[0-9]*", RUN+="/usr/local/bin/bluetooth-udev"
 EOF
+
 sudo systemctl daemon-reload
 
 log_blue "Disabled due to unreliable results for bluetooth.service naming and bluetoothctl agent configuration"
@@ -340,6 +338,7 @@ function install_raspotify() {
     if [[ -z $raspotifyInstall ]]; then 
       REPLY=$(askQuestion "Do you want to install Raspotify (Spotify Connect)? [y/N] " )
       #read -p "Do you want to install Raspotify (Spotify Connect)? [y/N] " REPLY
+
       if [[ ! "$REPLY" =~ ^(yes|y|Y)$ ]]; then return; fi
     fi
     if ! $raspotifyInstall; then return; fi
@@ -403,6 +402,7 @@ if (( $OPTIND == 1 )); then
   UPnPRendererInstall=""
   snapclientInstall=""
   verify_os
+
   # apt_update_netselect
 fi
 
