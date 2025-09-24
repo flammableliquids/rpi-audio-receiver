@@ -3,16 +3,12 @@
 set -e
 
 NQPTP_VERSION="1.2.4"
-<<<<<<< Updated upstream
-SHAIRPORT_SYNC_VERSION="4.3.2"
-=======
 SHAIRPORT_SYNC_VERSION="4.3.6"
 
 #Set hostname
 PRETTY_HOSTNAME=$(hostnamectl status --pretty)
 PRETTY_HOSTNAME=${PRETTY_HOSTNAME:-$(hostname)}
 
->>>>>>> Stashed changes
 TMP_DIR=""
 
 cleanup() {
@@ -21,9 +17,6 @@ cleanup() {
     fi
 }
 
-<<<<<<< Updated upstream
-verify_os() {
-=======
 function log_green() {
   local text="$1"
   printf "${GREEN} ${text}${NORMAL}\r\n"
@@ -81,7 +74,6 @@ function update_latest(){
 }
 
 function verify_os() {
->>>>>>> Stashed changes
     MSG="Unsupported OS: Raspberry Pi OS 12 (bookworm) is required."
 
     if [ ! -f /etc/os-release ]; then
@@ -97,10 +89,6 @@ function verify_os() {
     fi
 }
 
-<<<<<<< Updated upstream
-set_hostname() {
-    CURRENT_PRETTY_HOSTNAME=$(hostnamectl status --pretty)
-=======
 function verify_raspberryZero(){
     MODEL=$(grep Model /proc/cpuinfo | awk -F: '{ gsub(/^ +| +$/, "", $2) ;print $2}')
     if [[ "$MODEL" == *" Zero "* ]]; then
@@ -117,24 +105,10 @@ function verify_raspberryZero(){
 function set_hostname() {
     if [[ -z $changeHostname ]]; then
       if ! $changeHostname ; then return; fi
->>>>>>> Stashed changes
 
     read -p "Hostname [$(hostname)]: " HOSTNAME
     sudo raspi-config nonint do_hostname ${HOSTNAME:-$(hostname)}
 
-<<<<<<< Updated upstream
-    read -p "Pretty hostname [${CURRENT_PRETTY_HOSTNAME:-Raspberry Pi}]: " PRETTY_HOSTNAME
-    PRETTY_HOSTNAME="${PRETTY_HOSTNAME:-${CURRENT_PRETTY_HOSTNAME:-Raspberry Pi}}"
-    sudo hostnamectl set-hostname --pretty "$PRETTY_HOSTNAME"
-}
-
-install_bluetooth() {
-    read -p "Do you want to install Bluetooth Audio (ALSA)? [y/N] " REPLY
-    if [[ ! "$REPLY" =~ ^(yes|y|Y)$ ]]; then return; fi
-
-    # Bluetooth Audio ALSA Backend (bluez-alsa-utils)
-    sudo apt update
-=======
       CURRENT_PRETTY_HOSTNAME=$(hostnamectl status --pretty)
 
       read -p "Hostname [$(hostname)]: " HOSTNAME
@@ -199,7 +173,6 @@ function install_bluetooth() {
 
     log_green "Bluetooth: Installing Audio ALSA Backend (bluez-alsa-utils)"
     # sudo apt update
->>>>>>> Stashed changes
     sudo apt install -y --no-install-recommends bluez-tools bluez-alsa-utils
 
     # Bluetooth settings
@@ -259,13 +232,6 @@ EOF
 SUBSYSTEM=="input", GROUP="input", MODE="0660"
 KERNEL=="input[0-9]*", RUN+="/usr/local/bin/bluetooth-udev"
 EOF
-<<<<<<< Updated upstream
-}
-
-install_shairport() {
-    read -p "Do you want to install Shairport Sync (AirPlay 2 audio player)? [y/N] " REPLY
-    if [[ ! "$REPLY" =~ ^(yes|y|Y)$ ]]; then return; fi
-=======
 
 sudo systemctl daemon-reload
 
@@ -296,7 +262,6 @@ function install_shairport() {
     if ! $shairportInstall; then return; fi
 
     heading "Installing Shairport Sync"
->>>>>>> Stashed changes
 
     sudo apt update
     sudo apt install -y --no-install-recommends wget unzip autoconf automake build-essential libtool git autoconf automake libpopt-dev libconfig-dev libasound2-dev avahi-daemon libavahi-client-dev libssl-dev libsoxr-dev libplist-dev libsodium-dev libavutil-dev libavcodec-dev libavformat-dev uuid-dev libgcrypt20-dev xxd
@@ -358,11 +323,6 @@ EOF
     sudo systemctl enable --now shairport-sync
 }
 
-<<<<<<< Updated upstream
-install_raspotify() {
-    read -p "Do you want to install Raspotify (Spotify Connect)? [y/N] " REPLY
-    if [[ ! "$REPLY" =~ ^(yes|y|Y)$ ]]; then return; fi
-=======
 function install_raspotify() {
     if [[ -z $raspotifyInstall ]]; then
       REPLY=$(askQuestion "Do you want to install Raspotify (Spotify Connect)? [y/N] " )
@@ -377,21 +337,12 @@ function install_raspotify() {
         # If you can, then pull and execute the dtcooper version
         log_blue "Pulling dtcooper raspotify"
         curl -sL https://dtcooper.github.io/raspotify/install.sh | sh
->>>>>>> Stashed changes
 
 	log_green "Raspotify: Configure Raspotify"
 	LIBRESPOT_NAME="${PRETTY_HOSTNAME// /-}"
 	LIBRESPOT_NAME=${LIBRESPOT_NAME:-$(hostname)}
 
-<<<<<<< Updated upstream
-    # Configure Raspotify
-    LIBRESPOT_NAME="${PRETTY_HOSTNAME// /-}"
-    LIBRESPOT_NAME=${LIBRESPOT_NAME:-$(hostname)}
-
-    sudo tee /etc/raspotify/conf >/dev/null <<EOF
-=======
 	sudo tee /etc/raspotify/conf >/dev/null <<EOF
->>>>>>> Stashed changes
 LIBRESPOT_QUIET=on
 LIBRESPOT_AUTOPLAY=on
 LIBRESPOT_DISABLE_AUDIO_CACHE=on
@@ -400,13 +351,10 @@ LIBRESPOT_ENABLE_VOLUME_NORMALISATION=on
 LIBRESPOT_NAME="${LIBRESPOT_NAME}"
 LIBRESPOT_DEVICE_TYPE="avr"
 LIBRESPOT_BITRATE="320"
-LIBRESPOT_INITIAL_VOLUME="100"
+LIBRESPOT_INITIAL_VOLUME="60"
 EOF
 
     sudo systemctl daemon-reload
-<<<<<<< Updated upstream
-    sudo systemctl enable raspotify
-=======
     sudo systemctl enable --now raspotify
 
     else
@@ -428,9 +376,12 @@ EOF
         CONFIG_DIR=$HOME/.config/go-librespot
         [ -d $CONFIG_DIR ] || mkdir -p $CONFIG_DIR
         cat << EOF > $CONFIG_DIR/config.yml
-device_name: $PRETTY_HOSTNAME
-initial_volume: 100
-device_type: speaker
+device_name: "$PRETTY_HOSTNAME"
+device_type: "speaker"
+zeroconf_enabled: true
+bitrate: 320
+volume_steps: 5
+initial_volume: 60
 EOF
 
         log_yellow "OS Detected as ${ARCH} will download the related GO client"
@@ -482,20 +433,12 @@ WantedBy=multi-user.target" | sudo tee /lib/systemd/system/go-librespot-daemon.s
 	log_green "GO librespot daemon installation finished!"
 
     fi
->>>>>>> Stashed changes
 }
 
 trap cleanup EXIT
 
 echo "Raspberry Pi Audio Receiver"
 
-<<<<<<< Updated upstream
-verify_os
-set_hostname
-install_bluetooth
-install_shairport
-install_raspotify
-=======
 while getopts "nbsruc" opt; do
   case "$opt" in
     n) changeHostname=true ;;
@@ -559,4 +502,3 @@ banner
 log_green "Installation script completed!"
 banner
 
->>>>>>> Stashed changes
