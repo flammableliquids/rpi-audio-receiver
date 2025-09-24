@@ -43,7 +43,6 @@ SHAIRPORT_SYNC_VERSION="4.3.6"
 #Set hostname
 PRETTY_HOSTNAME=$(hostnamectl status --pretty)
 PRETTY_HOSTNAME=${PRETTY_HOSTNAME:-$(hostname)}
-
 TMP_DIR=""
 ###################################################
 ###################################################
@@ -75,7 +74,6 @@ function log_yellow() {
   local text="$1"
   printf "${YELLOW} ${text}${NORMAL}\r\n"
 }
-
 function banner(){
   # Get the terminal width
   width=$(tput cols)
@@ -302,12 +300,11 @@ function install_shairport() {
       if [[ ! "$REPLY" =~ ^(yes|y|Y)$ ]]; then return; fi
     fi
     if ! $shairportInstall; then return; fi
-
     heading "Installing Shairport Sync"
 
     # sudo apt update
     sudo apt install -y --no-install-recommends wget unzip autoconf automake build-essential libtool git autoconf automake libpopt-dev libconfig-dev libasound2-dev avahi-daemon libavahi-client-dev libssl-dev libsoxr-dev libplist-dev libsodium-dev libavutil-dev libavcodec-dev libavformat-dev uuid-dev libgcrypt20-dev xxd
-
+    
     if [[ -z "$TMP_DIR" ]]; then
         TMP_DIR=$(mktemp -d)
     fi
