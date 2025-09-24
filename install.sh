@@ -1,7 +1,42 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+###################################################
+###################################################
+#              Scripting Settings                 #
+###################################################
+###################################################
 
+#Run apt in non-interactive mode, assume default answers.
+export DEBIAN_FRONTEND=noninteractive
+#Cause the script to fail if and error code is provided (set -e)
+#Cause the script to fail if an error code is provided while pipping commands (set -o pipefail)
+#Cause the script to fail when encountering undefined variable (set -u)
+#DEBUG MODE for Development only, Cause the script to print out every command executed (set -x)
+set -eu -o pipefail
+# set -x
+###################################################
+###################################################
+#               Global Variables                  #
+###################################################
+###################################################
+
+# Setting default options for function execution
+changeHostname=false
+bluetoothInstall=false
+shairportInstall=false
+raspotifyInstall=false
+UPnPRendererInstall=false
+snapclientInstall=false
+
+#Text Color and Formatting Variables
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+BLUE='\033[1;34m'
+YELLOW='\033[1;33m'
+# NORMAL='\033[0m' # No Color
+NORMAL=$(tput sgr0) # No Color
+
+#Version config
 NQPTP_VERSION="1.2.4"
 SHAIRPORT_SYNC_VERSION="4.3.6"
 
@@ -10,8 +45,14 @@ PRETTY_HOSTNAME=$(hostnamectl status --pretty)
 PRETTY_HOSTNAME=${PRETTY_HOSTNAME:-$(hostname)}
 
 TMP_DIR=""
+###################################################
+###################################################
+#               Function Definitions              #
+###################################################
+###################################################
 
-cleanup() {
+
+function cleanup() {
     if [ -d "${TMP_DIR}" ]; then
         rm -rf "${TMP_DIR}"
     fi
@@ -77,14 +118,16 @@ function verify_os() {
     MSG="Unsupported OS: Raspberry Pi OS 12 (bookworm) is required."
 
     if [ ! -f /etc/os-release ]; then
-        echo $MSG
+        log_red $MSG
+        banner
         exit 1
     fi
 
     . /etc/os-release
 
-    if [[ ("$ID" != "debian" && "$ID" != "raspbian") || "$VERSION_ID" != "12" ]]; then
-        echo $MSG
+    if [ "$ID" != "debian" ] && [ "$ID" != "raspbian" ] || [ "$VERSION_ID" != "12" ]; then
+        log_red $MSG
+        banner
         exit 1
     fi
 }
@@ -106,8 +149,7 @@ function set_hostname() {
     if [[ -z $changeHostname ]]; then
       if ! $changeHostname ; then return; fi
 
-    read -p "Hostname [$(hostname)]: " HOSTNAME
-    sudo raspi-config nonint do_hostname ${HOSTNAME:-$(hostname)}
+      heading "Device Name Settings"
 
       CURRENT_PRETTY_HOSTNAME=$(hostnamectl status --pretty)
 
@@ -175,7 +217,7 @@ function install_bluetooth() {
     # sudo apt update
     sudo apt install -y --no-install-recommends bluez-tools bluez-alsa-utils
 
-    # Bluetooth settings
+    log_green "Bluetooth: creating basic settings"
     sudo tee /etc/bluetooth/main.conf >/dev/null <<'EOF'
 [General]
 Class = 0x200414
@@ -185,7 +227,7 @@ DiscoverableTimeout = 0
 AutoEnable=true
 EOF
 
-    # Bluetooth Agent
+    log_green "Bluetooth: configuring Agent"
     sudo tee /etc/systemd/system/bt-agent@.service >/dev/null <<'EOF'
 [Unit]
 Description=Bluetooth Agent
@@ -207,7 +249,7 @@ EOF
     sudo systemctl daemon-reload
     sudo systemctl enable bt-agent@hci0.service
 
-    # Bluetooth udev script
+    log_green "Bluetooth: installing udev script"
     sudo tee /usr/local/bin/bluetooth-udev >/dev/null <<'EOF'
 #!/bin/bash
 if [[ ! $NAME =~ ^\"([0-9A-F]{2}[:-]){5}([0-9A-F]{2})\"$ ]]; then exit 0; fi
@@ -263,7 +305,7 @@ function install_shairport() {
 
     heading "Installing Shairport Sync"
 
-    sudo apt update
+    # sudo apt update
     sudo apt install -y --no-install-recommends wget unzip autoconf automake build-essential libtool git autoconf automake libpopt-dev libconfig-dev libasound2-dev avahi-daemon libavahi-client-dev libssl-dev libsoxr-dev libplist-dev libsodium-dev libavutil-dev libavcodec-dev libavformat-dev uuid-dev libgcrypt20-dev xxd
 
     if [[ -z "$TMP_DIR" ]]; then
@@ -272,7 +314,7 @@ function install_shairport() {
 
     cd $TMP_DIR
 
-    # Install ALAC
+    log_green "Shairport: Install ALAC"
     wget -O alac-master.zip https://github.com/mikebrady/alac/archive/refs/heads/master.zip
     unzip alac-master.zip
     cd alac-master
@@ -284,7 +326,7 @@ function install_shairport() {
     cd ..
     rm -rf alac-master
 
-    # Install NQPTP
+    log_green "Shairport: Install NQPTP"
     wget -O nqptp-${NQPTP_VERSION}.zip https://github.com/mikebrady/nqptp/archive/refs/tags/${NQPTP_VERSION}.zip
     unzip nqptp-${NQPTP_VERSION}.zip
     cd nqptp-${NQPTP_VERSION}
@@ -295,7 +337,7 @@ function install_shairport() {
     cd ..
     rm -rf nqptp-${NQPTP_VERSION}
 
-    # Install Shairport Sync
+    log_green "Shairport: Install Shairport Sync"
     wget -O shairport-sync-${SHAIRPORT_SYNC_VERSION}.zip https://github.com/mikebrady/shairport-sync/archive/refs/tags/${SHAIRPORT_SYNC_VERSION}.zip
     unzip shairport-sync-${SHAIRPORT_SYNC_VERSION}.zip
     cd shairport-sync-${SHAIRPORT_SYNC_VERSION}
@@ -306,7 +348,7 @@ function install_shairport() {
     cd ..
     rm -rf shairport-sync-${SHAIRPORT_SYNC_VERSION}
 
-    # Configure Shairport Sync
+    log_green "Shairport: Configure Shairport Sync"
     sudo tee /etc/shairport-sync.conf >/dev/null <<EOF
 general = {
   name = "${PRETTY_HOSTNAME:-$(hostname)}";
@@ -344,16 +386,17 @@ function install_raspotify() {
 
 	sudo tee /etc/raspotify/conf >/dev/null <<EOF
 LIBRESPOT_QUIET=on
-LIBRESPOT_AUTOPLAY=on
-LIBRESPOT_DISABLE_AUDIO_CACHE=on
+LIBRESPOT_AUTOPLAY=off
+LIBRESPOT_DISABLE_AUDIO_CACHE=off
 LIBRESPOT_DISABLE_CREDENTIAL_CACHE=on
 LIBRESPOT_ENABLE_VOLUME_NORMALISATION=on
 LIBRESPOT_NAME="${LIBRESPOT_NAME}"
 LIBRESPOT_DEVICE_TYPE="avr"
 LIBRESPOT_BITRATE="320"
-LIBRESPOT_INITIAL_VOLUME="60"
+LIBRESPOT_INITIAL_VOLUME="50"
 EOF
 
+    log_green "Raspotify: daemon reload and enable"
     sudo systemctl daemon-reload
     sudo systemctl enable --now raspotify
 
@@ -376,12 +419,12 @@ EOF
         CONFIG_DIR=$HOME/.config/go-librespot
         [ -d $CONFIG_DIR ] || mkdir -p $CONFIG_DIR
         cat << EOF > $CONFIG_DIR/config.yml
-device_name: "$PRETTY_HOSTNAME"
-device_type: "speaker"
+device_name: $PRETTY_HOSTNAME
 zeroconf_enabled: true
+volume_steps: 10
+initial_volume: 100
+device_type: speaker
 bitrate: 320
-volume_steps: 5
-initial_volume: 60
 EOF
 
         log_yellow "OS Detected as ${ARCH} will download the related GO client"
@@ -393,10 +436,12 @@ EOF
         DAEMON_ARCHIVE=go-librespot_linux_$ARCH.tar.gz
         DAEMON_DOWNLOAD_URL=$DAEMON_BASE_URL/$DAEMON_ARCHIVE
         DAEMON_DOWNLOAD_PATH=$DAEMON_ARCHIVE
-        curl -L --progress_bar $DAEMON_DOWNLOAD_URL -o $DAEMON_DOWNLOAD_PATH
-        sudo tar xvzf $DAEMON_DOWNLOAD_PATH -C /usr/bin/ go-librespot
+        curl -L --progress-bar $DAEMON_DOWNLOAD_URL -o ./$DAEMON_DOWNLOAD_PATH
+	log_green "extracting downloaded files"
+        sudo tar xzvf $DAEMON_DOWNLOAD_PATH -C /usr/bin/ go-librespot
         rm $DAEMON_DOWNLOAD_PATH
         sudo chmod a+x /usr/bin/go-librespot
+
 	echo "#!/bin/sh
 
 # Traceback Setting
@@ -411,19 +456,18 @@ echo 'Librespot-go daemon starting...'
 	
 	echo "[Unit]
 Description = go-librespot Daemon
-After=network-online.target
-Wants=network-online.target
 
 [Service]
+After=network-online.target
+Wants=network-online.target
 ExecStart=/bin/start-go-librespot.sh
 Restart=always
 RestartSec=3
-StandardOutput=journal
-StandardError=journal
+StandardOutput=syslog
+StandardError=syslog
 SyslogIdentifier=go-librespot
 User=$USER
 Group=$GROUP
-
 [Install]
 WantedBy=multi-user.target" | sudo tee /lib/systemd/system/go-librespot-daemon.service
 	
@@ -437,7 +481,14 @@ WantedBy=multi-user.target" | sudo tee /lib/systemd/system/go-librespot-daemon.s
 
 trap cleanup EXIT
 
-echo "Raspberry Pi Audio Receiver"
+###################################################
+###################################################
+#               GetOpts and Execution             #
+###################################################
+###################################################
+
+
+heading "Raspberry Pi Audio Receiver Install script"
 
 while getopts "nbsruc" opt; do
   case "$opt" in
@@ -472,7 +523,7 @@ if (( $OPTIND == 1 )); then
   # apt_update_netselect
 fi
 
-### Update the apt cache and latest files.
+### Update the apt cache and latest packages.
 update_latest
 ### Set the hostname and the bluetooth name
 set_hostname $changeHostname
@@ -501,4 +552,3 @@ install_snapcast $snapclientInstall
 banner
 log_green "Installation script completed!"
 banner
-
