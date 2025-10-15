@@ -43,7 +43,6 @@ SHAIRPORT_SYNC_VERSION="4.3.6"
 #Set hostname
 PRETTY_HOSTNAME=$(hostnamectl status --pretty)
 PRETTY_HOSTNAME=${PRETTY_HOSTNAME:-$(hostname)}
-
 TMP_DIR=""
 ###################################################
 ###################################################
@@ -75,7 +74,6 @@ function log_yellow() {
   local text="$1"
   printf "${YELLOW} ${text}${NORMAL}\r\n"
 }
-
 function banner(){
   # Get the terminal width
   width=$(tput cols)
@@ -97,6 +95,8 @@ function askQuestion() {
   echo "$response"
 }
 
+#### To do, find the raspbian equivalent of netselect-apt
+#### netselect-apt doesn't seem to work on rpi os
 #     # netselect on rpi doesn't seem to actually change /etc/apt/sources.list
 #     # commenting out until i figure out why
 # apt_update_netselect(){
@@ -115,7 +115,7 @@ function update_latest(){
 }
 
 function verify_os() {
-    MSG="Unsupported OS: Raspberry Pi OS 12 (bookworm) is required."
+    MSG="Unsupported OS: Minimum Raspberry Pi OS 12 (bookworm) is required."
 
     if [ ! -f /etc/os-release ]; then
         log_red $MSG
@@ -125,8 +125,8 @@ function verify_os() {
 
     . /etc/os-release
 
-    if [ "$ID" != "debian" ] && [ "$ID" != "raspbian" ] || [ "$VERSION_ID" != "12" ]; then
-        log_red $MSG
+    if { [ "$ID" != "debian" ] && [ "$ID" != "raspbian" ]; } || [ "$VERSION_ID" -lt 12 ]; then
+        log_red "$MSG"
         banner
         exit 1
     fi
@@ -135,18 +135,19 @@ function verify_os() {
 function verify_raspberryZero(){
     MODEL=$(grep Model /proc/cpuinfo | awk -F: '{ gsub(/^ +| +$/, "", $2) ;print $2}')
     if [[ "$MODEL" == *" Zero "* ]]; then
-      log_yellow "dtCooper's version does not support Raspberry Pi Zero at this stage."
-      # echo "GO"
+      log_blue "dtCooper's version does not support Raspberry Pi Zero at this stage."
       return 0
     else
-      log_yellow "Device detected as ${MODEL}"
-      # echo "NO"
+      log_blue "Device detected as ${MODEL}"
       return 1
     fi
 }
 
 function set_hostname() {
     if [[ -z $changeHostname ]]; then
+      REPLY=$(askQuestion "Do you want to Change Hostname [y/N] " )
+      if [[ ! "$REPLY" =~ ^(yes|y|Y)$ ]]; then return; fi
+    fi
       if ! $changeHostname ; then return; fi
 
       heading "Device Name Settings"
@@ -302,12 +303,11 @@ function install_shairport() {
       if [[ ! "$REPLY" =~ ^(yes|y|Y)$ ]]; then return; fi
     fi
     if ! $shairportInstall; then return; fi
-
     heading "Installing Shairport Sync"
 
     # sudo apt update
     sudo apt install -y --no-install-recommends wget unzip autoconf automake build-essential libtool git autoconf automake libpopt-dev libconfig-dev libasound2-dev avahi-daemon libavahi-client-dev libssl-dev libsoxr-dev libplist-dev libsodium-dev libavutil-dev libavcodec-dev libavformat-dev uuid-dev libgcrypt20-dev xxd
-
+    
     if [[ -z "$TMP_DIR" ]]; then
         TMP_DIR=$(mktemp -d)
     fi
@@ -427,7 +427,7 @@ device_type: speaker
 bitrate: 320
 EOF
 
-        log_yellow "OS Detected as ${ARCH} will download the related GO client"
+        log_blue "OS Detected as ${ARCH} will download the related GO client"
         sudo apt-get install -y libogg-dev libvorbis-dev libasound2-dev
         if sudo systemctl is-active go-librespot-daemon.service; then
             sudo systemctl stop go-librespot-daemon.service
@@ -510,7 +510,7 @@ while getopts "nbsruc" opt; do
   esac
 done
 
-if (( $OPTIND == 1 )); then
+if [ $OPTIND == 1 ]; then
   echo "Default installation options"
   changeHostname=""
   bluetoothInstall=""
